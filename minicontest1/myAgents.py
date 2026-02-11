@@ -23,22 +23,64 @@ IMPORTANT
 `agent` defines which agent you will use. By default, it is set to ClosestDotAgent,
 but when you're ready to test your own agent, replace it with MyAgent
 """
-def createAgents(num_pacmen, agent='ClosestDotAgent'):
+def createAgents(num_pacmen, agent='MyAgent'):
     return [eval(agent)(index=i) for i in range(num_pacmen)]
 
 class MyAgent(Agent):
     """
-    Implementation of your agent.
+    Implementation of your agent - optimized with path caching to reduce compute time.
     """
+
+    def __init__(self, index=0):
+        super().__init__(index)
+        self.actionQueue = []
+        self.targetFood = None
 
     def getAction(self, state):
         """
         Returns the next action the agent will take
         """
+        # Check if cached path is still valid
+        if self.actionQueue and self.targetFood:
+            food = state.getFood()
+            tx, ty = self.targetFood
+            # If target food still exists, use cached path
+            if food[tx][ty]:
+                return self.actionQueue.pop(0)
+            else:
+                # Target was eaten, clear cache
+                self.actionQueue = []
+                self.targetFood = None
+        
+        # Need to compute new path
+        if not self.actionQueue:
+            path = self.findPathToClosestDot(state)
+            if path:
+                self.actionQueue = path
+                # Calculate target position
+                pos = state.getPacmanPosition(self.index)
+                from game import Actions
+                for action in path:
+                    dx, dy = Actions.directionToVector(action)
+                    pos = (int(pos[0] + dx), int(pos[1] + dy))
+                self.targetFood = pos
+        
+        # Return first action or STOP
+        if self.actionQueue:
+            return self.actionQueue.pop(0)
+        
+        from game import Directions
+        return Directions.STOP
 
-        "*** YOUR CODE HERE ***"
-
-        raise NotImplementedError()
+    def findPathToClosestDot(self, gameState):
+        """
+        Returns a path (a list of actions) to the closest dot using BFS.
+        BFS is faster than A* for this problem since any food is a valid goal.
+        """
+        problem = AnyFoodSearchProblem(gameState, self.index)
+        
+        # Use BFS - it's faster and finds closest food quickly
+        return search.bfs(problem)
 
     def initialize(self):
         """
@@ -46,10 +88,8 @@ class MyAgent(Agent):
         when the agent is first created. If you don't need to use it, then
         leave it blank
         """
-
-        "*** YOUR CODE HERE"
-
-        raise NotImplementedError()
+        self.actionQueue = []
+        self.targetFood = None
 
 """
 Put any other SearchProblems or search methods below. You may also import classes/methods in
@@ -71,7 +111,7 @@ class ClosestDotAgent(Agent):
 
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return search.bfs(problem)
 
     def getAction(self, state):
         return self.findPathToClosestDot(state)[0]
@@ -110,5 +150,21 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.food[x][y]
+
+def foodHeuristic(state, problem):
+    """
+    Heuristic for finding closest food using Manhattan distance.
+    """
+    position = state
+    foodGrid = problem.food
+    
+    # Find all food positions
+    foodList = foodGrid.asList()
+    
+    if not foodList:
+        return 0
+    
+    # Return Manhattan distance to closest food
+    return min([abs(position[0] - food[0]) + abs(position[1] - food[1]) for food in foodList])
 

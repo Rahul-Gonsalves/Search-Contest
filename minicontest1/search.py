@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-#
+# 
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -72,7 +72,7 @@ def tinyMazeSearch(problem):
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
-def depthFirstSearch(problem):
+def depthFirstSearch(problem: SearchProblem):
     """
     Search the deepest nodes in the search tree first.
 
@@ -86,18 +86,89 @@ def depthFirstSearch(problem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
-def breadthFirstSearch(problem):
+    stack = util.Stack()
+    visited = set()
+    
+
+    stack.push((problem.getStartState(), []))
+    
+    while not stack.isEmpty():
+        state, path = stack.pop()
+        
+        if state in visited:
+            continue
+            
+        # Mark as visited
+        visited.add(state)
+        
+        # Check if goal
+        if problem.isGoalState(state):
+            return path
+        
+        # Add successors to stack
+        for successor, action, stepCost in problem.getSuccessors(state):
+            if successor not in visited:
+                stack.push((successor, path + [action]))
+    
+    return []  
+
+def breadthFirstSearch(problem: SearchProblem):
     """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # Initialize queue for BFS and visited set
+    queue = util.Queue()
+    visited = set()
+    
+    # Push start state with empty path
+    startState = problem.getStartState()
+    queue.push((startState, []))
+    visited.add(startState)
+    
+    while not queue.isEmpty():
+        state, path = queue.pop()
+        
+        # Check if goal
+        if problem.isGoalState(state):
+            return path
+        
+        # Add successors to queue
+        for successor, action, stepCost in problem.getSuccessors(state):
+            if successor not in visited:
+                visited.add(successor)
+                queue.push((successor, path + [action]))
+    
+    return []  # No solution found
 
-def uniformCostSearch(problem):
+def uniformCostSearch(problem: SearchProblem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # priority queue
+    pq = util.PriorityQueue()
+    visited = set()
+    
+    startState = problem.getStartState()
+    pq.push((startState, [], 0), 0)
+    
+    while not pq.isEmpty():
+        state, path, cost = pq.pop()
+        
+        # Skip if already visited
+        if state in visited:
+            continue
+            
+        # Mark as visited
+        visited.add(state)
+        
+        # Check if goal
+        if problem.isGoalState(state):
+            return path
+        
+        # Add successors to priority queue
+        for successor, action, stepCost in problem.getSuccessors(state):
+            if successor not in visited:
+                newCost = cost + stepCost
+                pq.push((successor, path + [action], newCost), newCost)
+    
+    return []  
 
 def nullHeuristic(state, problem=None):
     """
@@ -106,10 +177,38 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
-def aStarSearch(problem, heuristic=nullHeuristic):
+def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # priority queue
+    pq = util.PriorityQueue()
+    visited = set()
+    
+    # Push start state with empty path and cost 0
+
+    pq.push((problem.getStartState(), [], 0), 0 + heuristic(problem.getStartState(), problem))
+    
+    while not pq.isEmpty():
+        state, path, cost = pq.pop()
+        
+        if state in visited:
+            continue
+            
+        # Mark as visited
+        visited.add(state)
+        
+        # Check if goal
+        if problem.isGoalState(state):
+            return path
+        
+        # Add successors to priority queue
+        for successor, action, stepCost in problem.getSuccessors(state):
+            if successor not in visited:
+                newCost = cost + stepCost
+                # g(n) + h(n)
+                priority = newCost + heuristic(successor, problem)
+                pq.push((successor, path + [action], newCost), priority)
+    
+    return []  
 
 
 # Abbreviations
